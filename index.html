@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,6 +15,7 @@
       --danger: #dc2626;
       --bg: #f8fafc;
     }
+
     body {
       font-family: system-ui, -apple-system, sans-serif;
       background: var(--bg);
@@ -21,6 +23,7 @@
       padding: 1rem;
       color: #1e293b;
     }
+
     .card {
       background: white;
       padding: 1.5rem;
@@ -29,9 +32,19 @@
       max-width: 480px;
       margin: 0 auto 1rem auto;
     }
-    h2 { margin-top: 0; }
-    label { display: block; margin: 0.8rem 0 0.3rem 0; font-weight: 600; }
-    select, input, button {
+
+    h2 {
+      margin-top: 0;
+    }
+
+    label {
+      display: block;
+      margin: 0.8rem 0 0.3rem 0;
+      font-weight: 600;
+    }
+
+    select,
+    button {
       width: 100%;
       padding: 0.75rem;
       border-radius: 8px;
@@ -39,6 +52,7 @@
       box-sizing: border-box;
       font-size: 1rem;
     }
+
     button {
       background: var(--primary);
       color: white;
@@ -47,7 +61,13 @@
       margin-top: 1rem;
       cursor: pointer;
     }
-    #reader { width: 100%; border-radius: 8px; overflow: hidden; }
+
+    #reader {
+      width: 100%;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
     .status-badge {
       text-align: center;
       padding: 1.5rem;
@@ -58,38 +78,72 @@
       margin-top: 1rem;
       display: none;
     }
-    .status-badge.allowed { background: var(--success); }
-    .status-badge.denied { background: var(--danger); }
-    .status-badge.loading { background: var(--primary); }
-    .hidden { display: none; }
+
+    .status-badge.allowed {
+      background: var(--success);
+    }
+
+    .status-badge.denied {
+      background: var(--danger);
+    }
+
+    .status-badge.loading {
+      background: var(--primary);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .workshop-details {
+      font-size: 0.9rem;
+      color: #64748b;
+      margin-top: 0.2rem;
+    }
   </style>
 </head>
+
 <body>
 
+  <!-- Setup Screen -->
   <div id="config-screen" class="card">
     <h2>Gate Check Setup</h2>
-    <label for="slot">Select Slot</label>
+
+    <label for="slot">1. Select Slot</label>
     <select id="slot">
       <option value="morning">Morning</option>
       <option value="afternoon">Afternoon</option>
     </select>
 
-    <label for="workshop-title">Workshop Title / ID</label>
-    <input type="text" id="workshop-title" placeholder="e.g. Workshop A or UUID directly" value="9aa3b34a-0be6-4021-9f1f-04e948745d1f">
+    <label for="workshop-select">2. Select Workshop</label>
+    <select id="workshop-select">
+      <!-- Options dynamically populated via JS -->
+    </select>
 
-    <button id="start-btn">Start Scanning</button>
+    <button id="start-btn">Start Gate Check</button>
   </div>
 
+  <!-- Scanner & Result Screen -->
   <div id="scanner-screen" class="card hidden">
-    <h2>Scanning Active</h2>
-    <p><strong>Configured Workshop ID:</strong> <span id="active-id-display"></span></p>
-    <div id="reader"></div>
-    
+    <h2>Gate Check Active</h2>
+    <div class="workshop-details">
+      <strong>Active Workshop:</strong> <span id="active-workshop-name"></span>
+    </div>
+
+    <!-- Camera Viewport -->
+    <div id="reader-container" style="margin-top: 1rem;">
+      <div id="reader"></div>
+    </div>
+
+    <!-- Scanning Result Badge -->
     <div id="result-badge" class="status-badge"></div>
 
-    <button id="reset-btn" style="background:#64748b;">Reconfigure Setup</button>
+    <!-- Controls -->
+    <button id="scan-next-btn" class="hidden" style="background: var(--primary);">Scan Next Participant</button>
+    <button id="reset-btn" style="background:#64748b;">Reconfigure Workshop Setup</button>
   </div>
 
   <script src="app.js"></script>
 </body>
+
 </html>
