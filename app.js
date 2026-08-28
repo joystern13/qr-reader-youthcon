@@ -75,15 +75,35 @@ async function onScanSuccess(decodedText) {
   showStatus('Verifying registration...', 'loading');
 
   try {
+    // Clean up input string (strip extra leading/trailing quotes or spaces)
+    const rawText = decodedText.trim().replace(/^"+|"+$/g, '');
+
     // 1. Extract API URL
-    const urlMatch = decodedText.match(/https?:\/\/[^\s"]+/);
+    const urlMatch = rawText.match(/https?:\/\/[^\s"]+/);
     if (!urlMatch) throw new Error("Invalid QR code format: URL not found.");
     const apiUrl = urlMatch[0];
 
-    // 2. Extract Bearer Token
-    const tokenMatch = decodedText.match(/Bearer\s+([^"\s]+)/);
-    if (!tokenMatch) throw new Error("Invalid QR code format: Bearer token not found.");
-    const token = tokenMatch[1];
+    // 2. Extract Bearer Token (Multi-Strategy Extraction)
+    let token = null;
+
+    // Strategy A: Regex match for Bearer followed by JWT string
+    const bearerRegexMatch = rawText.match(/Bearer\s+([A-Za-z0-9\-_=]+\.[A-Za-z0-9\-_=]+\.?[A-Za-z0-9\-_=]*)/i);
+    if (bearerRegexMatch) {
+      token = bearerRegexMatch[1];
+    } else {
+      // Strategy B: Fallback split for '--header' strings
+      const bearerIndex = rawText.indexOf("Bearer ");
+      if (bearerIndex !== -1) {
+        const afterBearer = rawText.substring(bearerIndex + 7).trim();
+        // Token ends at the next quote, space, or end of string
+        token = afterBearer.split(/["\s]/)[0];
+      }
+    }
+
+    if (!token) {
+      console.error("Failed to parse raw text:", rawText);
+      throw new Error("Invalid QR code format: Bearer token not found.");
+    }
 
     // 3. Make HTTP GET request
     const response = await fetch(apiUrl, {
