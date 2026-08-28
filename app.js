@@ -3,7 +3,7 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(err => console.error('SW reg error:', err));
 }
 
-// 1. Defined Workshop Data Catalog
+// Defined Workshop Data Catalog
 const WORKSHOPS = [
   { id: "74d3df9e-edc6-4a2e-8889-a1efeac84c67", slot: "morning", name: "Main Character Energy (Anna Hartinger)" },
   { id: "109f7f59-5e40-4ddd-a3a0-e472fc95be21", slot: "afternoon", name: "Main Character Energy (Anna Hartinger)" },
@@ -51,7 +51,7 @@ function updateWorkshopDropdown() {
 }
 
 slotSelect.addEventListener('change', updateWorkshopDropdown);
-updateWorkshopDropdown(); // Initial load
+updateWorkshopDropdown();
 
 startBtn.addEventListener('click', () => {
   activeWorkshopUuid = workshopSelect.value;
@@ -102,7 +102,6 @@ async function stopCamera() {
 }
 
 async function onScanSuccess(decodedText) {
-  // Stop camera immediately upon scanning
   await stopCamera();
   showStatus('Verifying registration...', 'loading');
 
@@ -151,11 +150,28 @@ async function onScanSuccess(decodedText) {
 
     const data = await dataResponse.json();
 
-    // 4. Validate registration against active workshop UUID
-    const attendeeProperties = Array.isArray(data.AttendeeProperty) 
-      ? data.AttendeeProperty 
-      : (data.AttendeeProperty ? [data.AttendeeProperty] : []);
+    // 4. Extract AttendeeProperty via the 'Zam' object
+    let attendeeProperties = [];
+    
+    if (data.Zam) {
+      const zamObj = data.Zam;
+      if (Array.isArray(zamObj)) {
+        // If Zam is an array, collect all AttendeeProperty items across entries
+        zamObj.forEach(z => {
+          if (Array.isArray(z.AttendeeProperty)) {
+            attendeeProperties.push(...z.AttendeeProperty);
+          } else if (z.AttendeeProperty) {
+            attendeeProperties.push(z.AttendeeProperty);
+          }
+        });
+      } else if (Array.isArray(zamObj.AttendeeProperty)) {
+        attendeeProperties = zamObj.AttendeeProperty;
+      } else if (zamObj.AttendeeProperty) {
+        attendeeProperties = [zamObj.AttendeeProperty];
+      }
+    }
 
+    // 5. Validate registration against active workshop UUID
     const registeredIds = attendeeProperties.map(p => (p.EventPropertyId || "").toLowerCase());
     const isRegistered = registeredIds.includes(activeWorkshopUuid.toLowerCase());
 
@@ -169,7 +185,6 @@ async function onScanSuccess(decodedText) {
     showStatus(`Error: ${err.message}`, 'denied');
   }
 
-  // Show button to allow scanning the next code
   scanNextBtn.classList.remove('hidden');
 }
 
