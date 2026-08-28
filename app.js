@@ -162,8 +162,8 @@ async function onScanSuccess(decodedText) {
       if (Array.isArray(zamObj)) {
         // Handle array variant of Zam
         const firstEntry = zamObj[0] || {};
-        firstName = firstEntry.Firstname || firstEntry.FirstName || "";
-        familyName = firstEntry.Familyname || firstEntry.LastName || "";
+        firstName = firstEntry.Person[0].Firstname || firstEntry.Person[0].FirstName || "";
+        familyName = firstEntry.Person[0].Familyname || firstEntry.Person[0].LastName || "";
 
         zamObj.forEach(z => {
           if (Array.isArray(z.AttendeeProperty)) {
@@ -174,8 +174,8 @@ async function onScanSuccess(decodedText) {
         });
       } else {
         // Handle single object variant of Zam
-        firstName = zamObj.Firstname || zamObj.FirstName || "";
-        familyName = zamObj.Familyname || zamObj.LastName || "";
+        firstName = zamObj.Person[0].Firstname || zamObj.Person[0].FirstName || "";
+        familyName = zamObj.Person[0].Familyname || zamObj.Person[0].LastName || "";
 
         if (Array.isArray(zamObj.AttendeeProperty)) {
           attendeeProperties = zamObj.AttendeeProperty;
