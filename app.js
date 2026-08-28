@@ -72,62 +72,69 @@ async function onScanSuccess(decodedText) {
   if (isProcessing) return;
   isProcessing = true;
 
-  showStatus('Verifying registration...', 'loading');
+  showStatus('Extracting participant ID and URL...', 'loading');
 
   try {
-    // Clean up input string (strip extra leading/trailing quotes or spaces)
-    const rawText = decodedText.trim().replace(/^"+|"+$/g, '');
+    const rawText = decodedText.trim();
 
-    // 1. Extract API URL
-    const urlMatch = rawText.match(/https?:\/\/[^\s"]+/);
-    if (!urlMatch) throw new Error("Invalid QR code format: URL not found.");
-    const apiUrl = urlMatch[0];
+    // 1. Parse the scanned string as a URL to dynamically get origin and path
+    const parsedUrl = new URL(rawText);
+    const baseUrl = parsedUrl.origin;
 
-    // 2. Extract Bearer Token (Multi-Strategy Extraction)
-    let token = null;
-
-    // Strategy A: Regex match for Bearer followed by JWT string
-    const bearerRegexMatch = rawText.match(/Bearer\s+([A-Za-z0-9\-_=]+\.[A-Za-z0-9\-_=]+\.?[A-Za-z0-9\-_=]*)/i);
-    if (bearerRegexMatch) {
-      token = bearerRegexMatch[1];
-    } else {
-      // Strategy B: Fallback split for '--header' strings
-      const bearerIndex = rawText.indexOf("Bearer ");
-      if (bearerIndex !== -1) {
-        const afterBearer = rawText.substring(bearerIndex + 7).trim();
-        // Token ends at the next quote, space, or end of string
-        token = afterBearer.split(/["\s]/)[0];
-      }
+    // 2. Extract Participant ID from path (matches e.g. /r/1126-8832-6919-9765)
+    const idMatch = parsedUrl.hash.match(/\/r\/([a-zA-Z0-9-]+)/) || parsedUrl.pathname.match(/\/r\/([a-zA-Z0-9-]+)/);
+    if (!idMatch) {
+      throw new Error("Invalid QR code format: Could not extract participant ID.");
     }
+    const participantId = idMatch[1];
 
-    if (!token) {
-      console.error("Failed to parse raw text:", rawText);
-      throw new Error("Invalid QR code format: Bearer token not found.");
-    }
+    // 3. Step 1: Fetch Authentication Token directly from target server
+    showStatus('Fetching access token...', 'loading');
+    const tokenEndpoint = `${baseUrl}/LundK.Online/api/Token/${participantId}?app=false`;
 
-    // 3. Make HTTP GET request
-    const response = await fetch(apiUrl, {
+    const tokenResponse = await fetch(tokenEndpoint, {
       method: 'GET',
+      mode: 'cors',
+      headers: { 
+        'Accept': 'application/json' 
+      }
+    });
+
+    if (!tokenResponse.ok) {
+      throw new Error(`Token fetch failed with status ${tokenResponse.status}`);
+    }
+
+    let tokenData = await tokenResponse.text();
+    // Clean up quotes if returned as a JSON string
+    const token = tokenData.replace(/^"|"$/g, '').trim();
+
+    // 4. Step 2: Fetch Attendee Data directly from target server
+    showStatus('Verifying registration...', 'loading');
+    const dataEndpoint = `${baseUrl}/LundK.Online/api/Data/attendee/${participantId}`;
+
+    const dataResponse = await fetch(dataEndpoint, {
+      method: 'GET',
+      mode: 'cors',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/json'
       }
     });
 
-    if (!response.ok) {
-      throw new Error(`API Request failed with status ${response.status}`);
+    if (!dataResponse.ok) {
+      throw new Error(`Attendee data request failed with status ${dataResponse.status}`);
     }
 
-    const data = await response.json();
+    const data = await dataResponse.json();
 
-    // 4. Extract EventPropertyId list from AttendeeProperty
+    // 5. Extract EventPropertyId list from AttendeeProperty
     const attendeeProperties = Array.isArray(data.AttendeeProperty) 
       ? data.AttendeeProperty 
       : (data.AttendeeProperty ? [data.AttendeeProperty] : []);
 
     const registeredIds = attendeeProperties.map(p => (p.EventPropertyId || "").toLowerCase());
 
-    // 5. Check match
+    // 6. Verify configured workshop match
     const isRegistered = registeredIds.includes(activeWorkshopUuid.toLowerCase());
 
     if (isRegistered) {
