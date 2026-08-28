@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workshop Gate Check</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2563eb">
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --bg: #f8fafc;
+    }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      margin: 0;
+      padding: 1rem;
+      color: #1e293b;
+    }
+    .card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      max-width: 480px;
+      margin: 0 auto 1rem auto;
+    }
+    h2 { margin-top: 0; }
+    label { display: block; margin: 0.8rem 0 0.3rem 0; font-weight: 600; }
+    select, input, button {
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      box-sizing: border-box;
+      font-size: 1rem;
+    }
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      font-weight: 600;
+      margin-top: 1rem;
+      cursor: pointer;
+    }
+    #reader { width: 100%; border-radius: 8px; overflow: hidden; }
+    .status-badge {
+      text-align: center;
+      padding: 1.5rem;
+      border-radius: 8px;
+      font-size: 1.25rem;
+      font-weight: bold;
+      color: white;
+      margin-top: 1rem;
+      display: none;
+    }
+    .status-badge.allowed { background: var(--success); }
+    .status-badge.denied { background: var(--danger); }
+    .status-badge.loading { background: var(--primary); }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <div id="config-screen" class="card">
+    <h2>Gate Check Setup</h2>
+    <label for="slot">Select Slot</label>
+    <select id="slot">
+      <option value="morning">Morning</option>
+      <option value="afternoon">Afternoon</option>
+    </select>
+
+    <label for="workshop-title">Workshop Title / ID</label>
+    <input type="text" id="workshop-title" placeholder="e.g. Workshop A or UUID directly" value="9aa3b34a-0be6-4021-9f1f-04e948745d1f">
+
+    <button id="start-btn">Start Scanning</button>
+  </div>
+
+  <div id="scanner-screen" class="card hidden">
+    <h2>Scanning Active</h2>
+    <p><strong>Configured Workshop ID:</strong> <span id="active-id-display"></span></p>
+    <div id="reader"></div>
+    
+    <div id="result-badge" class="status-badge"></div>
+
+    <button id="reset-btn" style="background:#64748b;">Reconfigure Setup</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
