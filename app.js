@@ -34,9 +34,10 @@ const resetBtn = document.getElementById('reset-btn');
 const scanNextBtn = document.getElementById('scan-next-btn');
 const activeWorkshopName = document.getElementById('active-workshop-name');
 const resultBadge = document.getElementById('result-badge');
+const statusTitle = document.getElementById('status-title');
+const attendeeName = document.getElementById('attendee-name');
 const readerContainer = document.getElementById('reader-container');
 
-// Populate workshop options based on selected slot
 function updateWorkshopDropdown() {
   const selectedSlot = slotSelect.value;
   const filteredWorkshops = WORKSHOPS.filter(w => w.slot === selectedSlot);
@@ -103,12 +104,12 @@ async function stopCamera() {
 
 async function onScanSuccess(decodedText) {
   await stopCamera();
-  showStatus('Verifying registration...', 'loading');
+  showStatus('Verifying registration...', '', 'loading');
 
   try {
     const rawText = decodedText.trim();
 
-    // 1. Extract dynamic Base URL and Participant ID directly from scanned QR string
+    // 1. Extract dynamic Base URL and Participant ID
     const parsedUrl = new URL(rawText);
     const baseUrl = parsedUrl.origin;
     
@@ -150,13 +151,20 @@ async function onScanSuccess(decodedText) {
 
     const data = await dataResponse.json();
 
-    // 4. Extract AttendeeProperty via the 'Zam' object
+    // 4. Extract AttendeeProperty, Firstname, and Familyname from Zam object
     let attendeeProperties = [];
-    
+    let firstName = "";
+    let familyName = "";
+
     if (data.Zam) {
       const zamObj = data.Zam;
+      
       if (Array.isArray(zamObj)) {
-        // If Zam is an array, collect all AttendeeProperty items across entries
+        // Handle array variant of Zam
+        const firstEntry = zamObj[0] || {};
+        firstName = firstEntry.Firstname || firstEntry.FirstName || "";
+        familyName = firstEntry.Familyname || firstEntry.LastName || "";
+
         zamObj.forEach(z => {
           if (Array.isArray(z.AttendeeProperty)) {
             attendeeProperties.push(...z.AttendeeProperty);
@@ -164,32 +172,41 @@ async function onScanSuccess(decodedText) {
             attendeeProperties.push(z.AttendeeProperty);
           }
         });
-      } else if (Array.isArray(zamObj.AttendeeProperty)) {
-        attendeeProperties = zamObj.AttendeeProperty;
-      } else if (zamObj.AttendeeProperty) {
-        attendeeProperties = [zamObj.AttendeeProperty];
+      } else {
+        // Handle single object variant of Zam
+        firstName = zamObj.Firstname || zamObj.FirstName || "";
+        familyName = zamObj.Familyname || zamObj.LastName || "";
+
+        if (Array.isArray(zamObj.AttendeeProperty)) {
+          attendeeProperties = zamObj.AttendeeProperty;
+        } else if (zamObj.AttendeeProperty) {
+          attendeeProperties = [zamObj.AttendeeProperty];
+        }
       }
     }
+
+    const fullName = `${firstName} ${familyName}`.trim();
 
     // 5. Validate registration against active workshop UUID
     const registeredIds = attendeeProperties.map(p => (p.EventPropertyId || "").toLowerCase());
     const isRegistered = registeredIds.includes(activeWorkshopUuid.toLowerCase());
 
     if (isRegistered) {
-      showStatus('ENTRY ALLOWED ✓', 'allowed');
+      showStatus('ENTRY ALLOWED ✓', fullName, 'allowed');
     } else {
-      showStatus('ENTRY DENIED ✗\n(Not Registered for this Workshop)', 'denied');
+      showStatus('ENTRY DENIED ✗', fullName ? `${fullName}\n(Not Registered)` : '(Not Registered)', 'denied');
     }
 
   } catch (err) {
-    showStatus(`Error: ${err.message}`, 'denied');
+    showStatus(`Error: ${err.message}`, '', 'denied');
   }
 
   scanNextBtn.classList.remove('hidden');
 }
 
-function showStatus(msg, type) {
-  resultBadge.innerText = msg;
+function showStatus(title, name, type) {
+  statusTitle.innerText = title;
+  attendeeName.innerText = name;
   resultBadge.className = `status-badge ${type}`;
   resultBadge.style.display = 'block';
 }

@@ -68,15 +68,17 @@
       overflow: hidden;
     }
 
+    /* Increased size of status badge */
     .status-badge {
       text-align: center;
-      padding: 1.5rem;
-      border-radius: 8px;
-      font-size: 1.25rem;
-      font-weight: bold;
+      padding: 2.5rem 1rem;
+      border-radius: 12px;
+      font-size: 2rem;
+      font-weight: 800;
       color: white;
       margin-top: 1rem;
       display: none;
+      line-height: 1.2;
     }
 
     .status-badge.allowed {
@@ -89,6 +91,17 @@
 
     .status-badge.loading {
       background: var(--primary);
+      font-size: 1.25rem;
+      padding: 1.5rem;
+    }
+
+    /* Name display area */
+    .attendee-name {
+      font-size: 1.35rem;
+      font-weight: 600;
+      margin-top: 0.8rem;
+      color: rgba(255, 255, 255, 0.95);
+      text-transform: capitalize;
     }
 
     .hidden {
@@ -116,9 +129,7 @@
     </select>
 
     <label for="workshop-select">2. Select Workshop</label>
-    <select id="workshop-select">
-      <!-- Options dynamically populated via JS -->
-    </select>
+    <select id="workshop-select"></select>
 
     <button id="start-btn">Start Gate Check</button>
   </div>
@@ -130,15 +141,16 @@
       <strong>Active Workshop:</strong> <span id="active-workshop-name"></span>
     </div>
 
-    <!-- Camera Viewport -->
     <div id="reader-container" style="margin-top: 1rem;">
       <div id="reader"></div>
     </div>
 
-    <!-- Scanning Result Badge -->
-    <div id="result-badge" class="status-badge"></div>
+    <!-- Scanning Result Banner -->
+    <div id="result-badge" class="status-badge">
+      <div id="status-title"></div>
+      <div id="attendee-name" class="attendee-name"></div>
+    </div>
 
-    <!-- Controls -->
     <button id="scan-next-btn" class="hidden" style="background: var(--primary);">Scan Next Participant</button>
     <button id="reset-btn" style="background:#64748b;">Reconfigure Workshop Setup</button>
   </div>
