@@ -81,7 +81,7 @@ async function onScanSuccess(decodedText) {
     const apiUrl = urlMatch[0];
 
     // 2. Extract Bearer Token
-    const tokenMatch = decodedText.match(/Bearer\s+([A-Za-z0-9\-_=]+\.[A-Za-z0-9\-_=]+\.?[A-Za-z0-9\-_=]*)/);
+    const tokenMatch = decodedText.match(/Bearer\s+([^"\s]+)/);
     if (!tokenMatch) throw new Error("Invalid QR code format: Bearer token not found.");
     const token = tokenMatch[1];
 
